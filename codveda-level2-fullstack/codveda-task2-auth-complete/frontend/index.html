@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Codveda Auth</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [form, setForm] = useState({ name: "", email: "", password: "" });
+      const [token, setToken] = useState(localStorage.getItem("token"));
+      const [message, setMessage] = useState("");
+
+      useEffect(() => {
+        if (token) {
+          fetch("http://localhost:5000/dashboard", {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => setMessage(data.message))
+          .catch(() => setMessage("Not authorized"));
+        }
+      }, [token]);
+
+      const handleChange = (e) =>
+        setForm({ ...form, [e.target.name]: e.target.value });
+
+      const signup = async () => {
+        const res = await fetch("http://localhost:5000/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form)
+        });
+        const data = await res.json();
+        alert(data.message);
+      };
+
+      const login = async () => {
+        const res = await fetch("http://localhost:5000/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form)
+        });
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          setToken(data.token);
+        }
+        alert(data.message);
+      };
+
+      const logout = () => {
+        localStorage.removeItem("token");
+        setToken(null);
+        setMessage("");
+      };
+
+      return (
+        <div className="container">
+          <h1>🔐 Codveda JWT Auth</h1>
+          <input name="name" placeholder="Name" onChange={handleChange} />
+          <input name="email" placeholder="Email" onChange={handleChange} />
+          <input name="password" type="password" placeholder="Password" onChange={handleChange} />
+          <div>
+            <button onClick={signup}>Signup</button>
+            <button onClick={login}>Login</button>
+            <button onClick={logout}>Logout</button>
+          </div>
+          <h3>{message}</h3>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
